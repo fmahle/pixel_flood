@@ -1,0 +1,17 @@
+name: pixel_flood
+version: 0.1.0
+
+authors:
+  - <|:3c <lj2igcmkh@mozmail.com>
+
+targets:
+  pixel_flood:
+    main: src/pixel_flood.cr
+
+crystal: '>= 1.12.1'
+
+license: GPLv3
+
+dependencies:
+  ncurses:
+    github: agatan/ncurses.cr
