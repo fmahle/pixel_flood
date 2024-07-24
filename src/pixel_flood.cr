@@ -26,8 +26,12 @@ class Area
       matrix[coordinate.y][coordinate.x] = self
     end
     @coordinates.concat(area.coordinates)
+
     COLORS.times do |color|
       @neighbors[color].concat(area.neighbors[color])
+      area.neighbors[color].each do |neighbore|
+        neighbore.neighbors[area.color].delete(area)
+      end
     end
     @neighbors[area.color].delete(area)
     @neighbors[@color].delete(self)
@@ -39,10 +43,13 @@ class Area
     area.neighbors[@color].add(self)
   end
 
-  def set_color(@color, matrix : Array(Array(Area)))
-    @neighbors[@color].each do |neighbore|
+  def set_color(color, matrix : Array(Array(Area)))
+    foo = @neighbors[color].size > 0
+    @neighbors[color].each do |neighbore|
       self.merge(neighbore, matrix)
     end
+    @color = color
+    foo
   end
 end
 
@@ -91,6 +98,7 @@ def generate_matrix
 end
 
 moves = 0
+success = false
 
 NCurses.open do
   NCurses.cbreak
@@ -113,28 +121,30 @@ NCurses.open do
 
   NCurses.erase
 
-  input = -1
   loop do
     ROWS.times do |i|
       COLUMNS.times do |j|
         NCurses.attron(pairs[matrix[i][j].color].attr)
-        NCurses.move(y: i, x: j * 2)
-        NCurses.addstr(" " + (matrix[i][j].color + 1).to_s)
+        NCurses.mvaddstr(" " + (matrix[i][j].color + 1).to_s, y: i, x: j * 2)
       end
     end
     NCurses.refresh
-    old_input = input
-    input = (NCurses.getch.to_i - 49).to_u
+    input = (NCurses.getch.to_i - 49)
     break if !(0..(COLORS - 1)).includes?(input)
-    if old_input != input
+    if matrix[0][0].set_color(input.to_u, matrix)
       moves += 1
     end
     NCurses.erase
-    matrix[0][0].set_color(input, matrix)
+    if matrix.flatten.uniq.size == 1
+      success = true
+      break
+    end
+    NCurses.mvaddstr(moves.to_s + " " + matrix.flatten.uniq.size.to_s, y: ROWS, x: COLUMNS * 2)
   end
 
   NCurses.notimeout(true)
-  NCurses.getch
 end
 
-puts moves
+if success
+  puts moves
+end
