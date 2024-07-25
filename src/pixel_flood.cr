@@ -21,6 +21,12 @@ class Area
     @coordinates = [Coordinate.new(y, x)]
   end
 
+  def contact(area : Area)
+    return if area == self
+    @neighbors[area.color].add(area)
+    area.neighbors[@color].add(self)
+  end
+
   def merge(area : Area, matrix : Array(Array(Area)))
     area.coordinates.each do |coordinate|
       matrix[coordinate.y][coordinate.x] = self
@@ -35,12 +41,6 @@ class Area
     end
     @neighbors[area.color].delete(area)
     @neighbors[@color].delete(self)
-  end
-
-  def contact(area : Area)
-    return if area == self
-    @neighbors[area.color].add(area)
-    area.neighbors[@color].add(self)
   end
 
   def set_color(color, matrix : Array(Array(Area)))
@@ -119,32 +119,52 @@ NCurses.open do
 
   matrix = generate_matrix
 
-  NCurses.erase
-
   loop do
+    NCurses.erase
     ROWS.times do |i|
       COLUMNS.times do |j|
         NCurses.attron(pairs[matrix[i][j].color].attr)
         NCurses.mvaddstr(" " + (matrix[i][j].color + 1).to_s, y: i, x: j * 2)
       end
     end
+
     NCurses.refresh
-    input = (NCurses.getch.to_i - 49)
-    break if !(0..(COLORS - 1)).includes?(input)
-    if matrix[0][0].set_color(input.to_u, matrix)
-      moves += 1
+
+    highest_neighbore_count = 0
+    highest_neighbore_count_color = nil
+
+    matrix[0][0].neighbors.each_with_index do |neighbors, color|
+      neighbore_count = (neighbors.map{ |color_neighbore| color_neighbore.neighbors.sum }.sum - matrix[0][0].neighbors.sum).size
+      if neighbore_count > highest_neighbore_count
+        highest_neighbore_count = neighbore_count
+        highest_neighbore_count_color = color.to_u
+      end
     end
-    NCurses.erase
+
+    highest_neighbore_count_color ||= (matrix[0][0].neighbors.index{ |neighbors| neighbors.size > 0} || 0).to_u
+
+    NCurses.attron(pairs[highest_neighbore_count_color].attr)
+    NCurses.mvaddstr(moves.to_s + " " + matrix.flatten.uniq.size.to_s, y: ROWS, x: COLUMNS * 2)
+
+    NCurses.refresh
+
+    input = NCurses.getch.to_i
+
+    if 48 < input < 49 + COLORS
+      moves += 1 if matrix[0][0].set_color(input.to_u - 49, matrix)
+    elsif input == 97
+      moves += 1 if matrix[0][0].set_color(highest_neighbore_count_color, matrix)
+    else
+      break
+    end
+
     if matrix.flatten.uniq.size == 1
       success = true
       break
     end
-    NCurses.mvaddstr(moves.to_s + " " + matrix.flatten.uniq.size.to_s, y: ROWS, x: COLUMNS * 2)
   end
 
   NCurses.notimeout(true)
 end
 
-if success
-  puts moves
-end
+puts moves if success
