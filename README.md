@@ -1,18 +1,19 @@
 # pixel_flood
 
-TODO: Write a description here
+pixel_flood is a terminal based mini game.
+The goal is to fill the entire playing field
+with one color with as little moves as possible.
+You win if you need 25 moves or less.
 
 ## Installation
 
-TODO: Write installation instructions here
+run `shards build`<br>
+You will find the binary at bin/pixel_flood
 
 ## Usage
 
-TODO: Write usage instructions here
-
-## Development
-
-TODO: Write development instructions here
+You can choose a color with <kbd>1</kbd>-<kbd>6</kbd> or
+press <kbd>a</kbd> to leave it to the computer.
 
 ## Contributing
 
